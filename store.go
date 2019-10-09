@@ -53,9 +53,18 @@ func dbInit(dbFileName string) (*DBI, error) {
 	}
 
 	// Write the buckets
-	err = commit(dbi.tx)
+	err = commitAndBeginAndBuckets(dbi)
 	if err != nil {
 		return nil, err
+	}
+	return dbi, nil
+	//return nil, nil
+}
+
+func commitAndBeginAndBuckets(dbi *DBI) error {
+	err := commit(dbi.tx)
+	if err != nil {
+		return err
 	}
 
 	dbi.tx = nil
@@ -66,7 +75,7 @@ func dbInit(dbFileName string) (*DBI, error) {
 	dbi.tx, err = begin(dbi.db)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return err
 	}
 
 	// Get the buckets back
@@ -74,21 +83,20 @@ func dbInit(dbFileName string) (*DBI, error) {
 	if dbi.hashes == nil {
 		err := errors.New("Bucket does not exist")
 		log.Println(err)
-		return nil, err
+		return err
 	}
 
 	dbi.filesizes = dbi.tx.Bucket(SizeBucket)
 	if dbi.filesizes == nil {
 		err := errors.New("Bucket does not exist")
 		log.Println(err)
-		return nil, err
+		return err
 	}
-
-	return dbi, nil
-	//return nil, nil
+	return nil
 }
 
 func begin(db *bolt.DB) (*bolt.Tx, error) {
+	log.Println("TXTXT BEGIN  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 	if db == nil {
 		return nil, errors.New("DB is nil")
 	}
@@ -101,6 +109,7 @@ func begin(db *bolt.DB) (*bolt.Tx, error) {
 	return tx, err
 }
 func commit(tx *bolt.Tx) error {
+	log.Println("TXTXT COMMIT  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 	if tx == nil {
 		return errors.New("Tx is nil")
 	}
@@ -153,4 +162,8 @@ func store(b *bolt.Bucket, bs []byte) error {
 		log.Println(err)
 	}
 	return err
+}
+
+func pushTx(dbi *DBI) error {
+	return commitAndBeginAndBuckets(dbi)
 }

@@ -8,6 +8,8 @@ import (
 	"os"
 )
 
+const TxSize = 1000
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
@@ -32,7 +34,8 @@ func main() {
 
 	}()
 
-	err = Walk("/home/gnewton/",
+	counter := 0
+	err = Walk("/home/gnewton/SBCARD",
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				//log.Println(err)
@@ -60,7 +63,7 @@ func main() {
 						log.Println(err)
 						return err
 					}
-					log.Println(path)
+					log.Println(counter, " ", path)
 					h, err := hash(path)
 					if err != nil {
 						log.Println(err)
@@ -73,6 +76,14 @@ func main() {
 							log.Println(err)
 							return err
 						}
+					}
+					counter++
+					if counter > TxSize {
+						err = pushTx(dbi)
+						if err != nil {
+							return err
+						}
+						counter = 0
 					}
 				}
 				return nil
