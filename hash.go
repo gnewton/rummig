@@ -1,7 +1,8 @@
 package main
 
 import (
-	"crypto/sha256"
+	//	"crypto/sha256"
+	"crypto/md5"
 	"errors"
 	"io"
 	"log"
@@ -19,7 +20,8 @@ func hash(filename string) ([]byte, error) {
 		log.Println(err)
 		m, ok := err.(*os.PathError)
 		if ok {
-			if m.Err.Error() == "permission denied" {
+			e := m.Err.Error()
+			if e == "permission denied" || e == "no data available" {
 				return nil, nil
 			}
 		}
@@ -27,8 +29,15 @@ func hash(filename string) ([]byte, error) {
 	}
 	defer f.Close()
 
-	h := sha256.New()
+	//h := sha256.New()
+	h := md5.New()
 	if _, err := io.Copy(h, f); err != nil {
+		m, ok := err.(*os.PathError)
+		if ok {
+			if m.Err.Error() == "no data available" {
+				return nil, nil
+			}
+		}
 		log.Println(err)
 		return nil, err
 	}
